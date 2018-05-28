@@ -1,0 +1,45 @@
+#findMappingDocumentsByDatasetId.rq
+
+prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
+prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dcterms: <http://purl.org/dc/elements/1.1/>
+prefix dct: <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT *
+FROM <$graphURL>
+WHERE {
+    { ?md a mpv:R2RMLMappingDocument . }
+    UNION
+    { ?md a mpv:MappingDocument . }
+
+    ?md dcterms:identifier ?mdID .
+    ?md dcterms:dateSubmitted ?mdDateSubmitted .
+    OPTIONAL { ?md mpv:hash ?mdSHA . }
+    OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
+    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
+    OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
+    OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
+    OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
+    OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
+    OPTIONAL {
+        ?md mpv:hasDatasetId ?datasetId .
+        OPTIONAL {
+            ?md mpv:hasDataset ?dataset .
+            ?dataset dcterms:title ?datasetTitle.
+            ?dataset dcterms:modified ?datasetModified .
+            # ?dataset dcterms:identifier ?datasetId .
+            OPTIONAL {
+                ?dataset dcat:distribution ?distribution .
+                ?distribution dcat:accessURL ?distributionAccessURL .
+                ?distribution mpv:hash ?distributionHash .
+            }
+        }
+    }
+    FILTER regex(str(?datasetId), "$datasetId", "i")
+    #FILTER (regex(str(?datasetId), "$datasetId", "i") || regex(str(?datasetId), "$ckanPackageName", "i") || regex(str(?datasetId), "$ckanPackageId", "i"))
+
+}
+ORDER BY DESC(?dateSubmitted)
