@@ -6,7 +6,7 @@ import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
-import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
+import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine, MappingPediaProperties}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
 import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
@@ -14,10 +14,27 @@ import es.upm.fi.dia.oeg.mappingpedia.utility._
 import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingpediaCommonCKANClient
+import es.upm.fi.dia.oeg.mappingpedia.utility.MappingpediaCommonsCKANUtility
 
-class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:GitHubUtility, val virtuosoClient: VirtuosoClient, val jenaClient:JenaClient) {
-  val mappingpediaCommonCKANUtility = new MappingpediaCommonCKANClient(ckanClient.ckanUrl, ckanClient.authorizationToken);
+class MappingDocumentController(
+                                 //val ckanClient:CKANUtility
+                                 //val githubClient:GitHubUtility
+                                 //val virtuosoClient: VirtuosoClient
+                                 val jenaClient:JenaClient
+                               ) {
+  val properties = new MappingPediaProperties();
+
+  val ckanUtility = new MappingpediaCommonsCKANUtility(
+    properties.ckanURL, properties.ckanKey
+  );
+
+  val githubUtility = new MappingpediaCommonsGitHubUtility(
+    properties.githubRepository, properties.githubUser, properties.githubAccessToken
+  );
+
+  val virtuosoUtility = new MappingpediaCommonsVirtuosoUtility(
+    properties.virtuosoJDBC, properties.virtuosoUser, properties.virtuosoPwd, ""
+  );
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
   val mapper = new ObjectMapper();
@@ -46,7 +63,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     //val mappingContent = MappingPediaEngine.getMappingContent(mappingFilePath)
 
     logger.info("STORING MAPPING DOCUMENT FILE ON GITHUB ...")
-    val response = githubClient.putEncodedContent(
+    val response = githubUtility.putEncodedContent(
       mappingDocumentFilePath, commitMessage, base64EncodedContent)
     val responseStatus = response.getStatus
     if (HttpURLConnection.HTTP_OK == responseStatus
@@ -72,7 +89,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
 
     val ckanPackageId = if(datasetPackageId == null) {
       try {
-        val foundPackages = this.mappingpediaCommonCKANUtility.findPackageByPackageName(organizationId
+        val foundPackages = this.ckanUtility.findPackageByPackageName(organizationId
           , datasetId);
 
         if(foundPackages.size > 0) {
@@ -100,8 +117,8 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         collectiveErrorMessage = errorMessage :: collectiveErrorMessage
         null
     }
-    mappingDocument.accessURL = this.githubClient.getAccessURL(mappingFileGitHubResponse)
-    mappingDocument.setDownloadURL(this.githubClient.getDownloadURL(mappingDocument.accessURL))
+    mappingDocument.accessURL = githubUtility.getAccessURL(mappingFileGitHubResponse)
+    mappingDocument.setDownloadURL(githubUtility.getDownloadURL(mappingDocument.accessURL))
     val mappingDocumentDownloadURL = mappingDocument.getDownloadURL();
     mappingDocument.hash = MappingPediaUtility.calculateHash(mappingDocumentDownloadURL).toString;
 
@@ -173,7 +190,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
         val mappingDocumentManifestFilePath = s"${organizationId}/${datasetId}/${mappingDocument.dctIdentifier}/${manifestFile.getName}";
         logger.info(s"mappingDocumentManifestFilePath = $mappingDocumentManifestFilePath")
 
-        val githubResponse = githubClient.encodeAndPutFile(
+        val githubResponse = githubUtility.encodeAndPutFile(
           mappingDocumentManifestFilePath, addNewManifestCommitMessage, manifestFile)
         val addNewManifestResponseStatus = githubResponse.getStatus
         val addNewManifestResponseStatusText = githubResponse.getStatusText
@@ -206,7 +223,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     } else {
       addNewManifestResponse.getBody.getObject.getJSONObject("content").getString("url")
     }
-    mappingDocument.manifestDownloadURL = this.githubClient.getDownloadURL(mappingDocument.manifestAccessURL);
+    mappingDocument.manifestDownloadURL = githubUtility.getDownloadURL(mappingDocument.manifestAccessURL);
 
     val (responseStatus, responseStatusText) = if (errorOccured) {
       (HttpURLConnection.HTTP_INTERNAL_ERROR, "Internal Error: " + collectiveErrorMessage.mkString("[", ",", "]"))
@@ -265,7 +282,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    val qexec = virtuosoUtility.createQueryExecution(queryString);
 
     var results: List[String] = List.empty;
     try {
@@ -291,7 +308,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findMappedClassesByMappingDocumentId.rq")
 
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    val qexec = virtuosoUtility.createQueryExecution(queryString);
     logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
@@ -336,7 +353,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    val qexec = virtuosoUtility.createQueryExecution(queryString);
     logger.debug(s"queryString = \n$queryString")
 
     var results: List[String] = List.empty;
@@ -377,7 +394,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    val qexec = virtuosoUtility.createQueryExecution(queryString);
 
 
     var results: List[String] = List.empty;
@@ -612,7 +629,7 @@ class MappingDocumentController(val ckanClient:CKANUtility, val githubClient:Git
       , MappingPediaEngine.mappingpediaProperties.virtuosoUser, MappingPediaEngine.mappingpediaProperties.virtuosoPwd);
     val qexec = VirtuosoQueryExecutionFactory.create(queryString, m)
     */
-    val qexec = this.virtuosoClient.createQueryExecution(queryString);
+    val qexec = virtuosoUtility.createQueryExecution(queryString);
     //logger.info(s"queryString = \n$queryString")
 
     var results: List[MappingDocument] = List.empty;
