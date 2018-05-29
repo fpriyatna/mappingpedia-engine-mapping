@@ -6,36 +6,28 @@ import java.util.{Date, Properties}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
-import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.logger
+import es.upm.fi.dia.oeg.mappingpedia.MappingPediaEngine.{githubClient, logger, virtuosoClient}
 import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController.logger
 import es.upm.fi.dia.oeg.mappingpedia.{MappingPediaConstant, MappingPediaEngine}
 import org.slf4j.{Logger, LoggerFactory}
 import es.upm.fi.dia.oeg.mappingpedia.model._
-import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, ListResult}
+import es.upm.fi.dia.oeg.mappingpedia.model.result.{AddMappingDocumentResult, GeneralResult, ListResult}
 import es.upm.fi.dia.oeg.mappingpedia.utility._
 import org.apache.jena.graph.Triple
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.impl.StatementImpl
 import org.apache.jena.vocabulary.RDF
+import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
 import scala.io.Source
 import scala.io.Source.fromFile
 
-class MappingDocumentController() {
+class MappingDocumentController(properties:Properties) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
-  val properties = new Properties()
 
-  val propertiesFilePath = "/" + MappingPediaConstant.DEFAULT_CONFIGURATION_FILENAME;
-  val url = getClass.getResource(propertiesFilePath)
-  logger.info(s"loading mappingpedia-engine-mappings configuration file from: ${url}")
-  if (url != null) {
-    val source = Source.fromURL(url)
-    val reader = source.bufferedReader();
 
-    properties.load(reader)
-    logger.debug(s"properties.keySet = ${properties.keySet()}")
-  }
+
 
   val ckanUtility = new MpcCkanUtility(
     properties.getProperty(MappingPediaConstant.CKAN_URL)
@@ -54,8 +46,9 @@ class MappingDocumentController() {
     , properties.getProperty(MappingPediaConstant.VIRTUOSO_PWD)
     , properties.getProperty(MappingPediaConstant.GRAPH_NAME)
   );
-
-  val jenaUtility = new MPCJenaUtility(null);
+  val schemaOntology = MPCJenaUtility.loadSchemaOrgOntology(virtuosoUtility
+    , MappingPediaConstant.SCHEMA_ORG_FILE, MappingPediaConstant.FORMAT)
+  val jenaUtility = new MPCJenaUtility(schemaOntology);
 
 
 
@@ -861,10 +854,66 @@ class MappingDocumentController() {
     mappingFileContent;
   }
 
+  def updateExistingMapping(mappingpediaUsername:String, mappingDirectory:String, mappingFilename:String
+                            //, mappingFileRef:MultipartFile
+                            , mappingFile:File
+                           ): GeneralResult = {
+    logger.debug("mappingpediaUsername = " + mappingpediaUsername)
+    logger.debug("mappingDirectory = " + mappingDirectory)
+    logger.debug("mappingFilename = " + mappingFilename)
+    try {
+      //val mappingFile = MappingPediaUtility.multipartFileToFile(mappingFileRef, mappingDirectory)
+      val mappingFilePath = mappingFile.getPath
+      logger.debug("mapping file path = " + mappingFilePath)
+      val commitMessage = "Mapping modification by mappingpedia-engine.Application"
+      val mappingContent = this.getMappingContent(null, null, mappingFilePath, null)
+      val base64EncodedContent = GitHubUtility.encodeToBase64(mappingContent)
+      val response = githubClient.putEncodedContent(mappingpediaUsername, mappingDirectory, mappingFilename
+        , commitMessage, base64EncodedContent)
+      val responseStatus = response.getStatus
+      logger.debug("responseStatus = " + responseStatus)
+      val responseStatusText = response.getStatusText
+      logger.debug("responseStatusText = " + responseStatusText)
+
+      val executionResult = if (HttpURLConnection.HTTP_OK == responseStatus) {
+        val githubMappingURL = response.getBody.getObject.getJSONObject("content").getString("url")
+        logger.debug("githubMappingURL = " + githubMappingURL)
+        new GeneralResult(responseStatusText, responseStatus)
+      } else {
+        new GeneralResult(responseStatusText, responseStatus)
+      }
+      executionResult;
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        val errorMessage = "error processing the uploaded mapping file: " + e.getMessage
+        logger.error(errorMessage)
+        val errorCode = HttpURLConnection.HTTP_INTERNAL_ERROR
+        val executionResult = new GeneralResult(errorMessage, errorCode)
+        executionResult
+    }
+  }
+
 }
 
 object MappingDocumentController {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+
+  def apply(): MappingDocumentController = {
+    val propertiesFilePath = "/" + MappingPediaConstant.DEFAULT_CONFIGURATION_FILENAME;
+    val url = getClass.getResource(propertiesFilePath)
+    logger.info(s"loading mappingpedia-engine-mappings configuration file from: ${url}")
+    val properties = new Properties();
+    if (url != null) {
+      val source = Source.fromURL(url)
+      val reader = source.bufferedReader();
+      properties.load(reader)
+      logger.debug(s"properties.keySet = ${properties.keySet()}")
+    }
+
+    new MappingDocumentController(properties)
+
+  }
 
   def generateManifestFile(mappingDocument: MappingDocument, datasetId: String, datasetPackageId:String) = {
     logger.info("GENERATING MANIFEST FILE FOR MAPPING DOCUMENT ...")

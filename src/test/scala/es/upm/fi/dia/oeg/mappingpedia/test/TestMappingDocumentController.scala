@@ -7,7 +7,7 @@ import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument
 
 object TestMappingDocumentController {
   def main(args:Array[String]) = {
-    val controller = new MappingDocumentController();
+    val controller = MappingDocumentController();
     this.testAddMappingDocument(controller);
 
     println("bye");
