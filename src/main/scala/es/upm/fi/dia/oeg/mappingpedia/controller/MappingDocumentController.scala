@@ -23,32 +23,16 @@ import scala.collection.JavaConversions._
 import scala.io.Source
 import scala.io.Source.fromFile
 
-class MappingDocumentController(properties:Properties) {
+class MappingDocumentController(
+                                 ckanUtility:MpcCkanUtility
+                                 , githubUtility:MpcGithubUtility
+                               , virtuosoUtility:MpcVirtuosoUtility
+                               , jenaUtility:MPCJenaUtility ) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
 
 
 
-  val ckanUtility = new MpcCkanUtility(
-    properties.getProperty(MappingPediaConstant.CKAN_URL)
-    , properties.getProperty(MappingPediaConstant.CKAN_KEY)
-  );
-
-  val githubUtility = new MpcGithubUtility(
-    properties.getProperty(MappingPediaConstant.GITHUB_REPOSITORY)
-    , properties.getProperty(MappingPediaConstant.GITHUB_USER)
-    , properties.getProperty(MappingPediaConstant.GITHUB_ACCESS_TOKEN)
-  );
-
-  val virtuosoUtility = new MpcVirtuosoUtility(
-    properties.getProperty(MappingPediaConstant.VIRTUOSO_JDBC)
-    , properties.getProperty(MappingPediaConstant.VIRTUOSO_USER)
-    , properties.getProperty(MappingPediaConstant.VIRTUOSO_PWD)
-    , properties.getProperty(MappingPediaConstant.GRAPH_NAME)
-  );
-  val schemaOntology = MPCJenaUtility.loadSchemaOrgOntology(virtuosoUtility
-    , MappingPediaConstant.SCHEMA_ORG_FILE, MappingPediaConstant.FORMAT)
-  val jenaUtility = new MPCJenaUtility(schemaOntology);
 
 
 
@@ -911,7 +895,32 @@ object MappingDocumentController {
       logger.debug(s"properties.keySet = ${properties.keySet()}")
     }
 
-    new MappingDocumentController(properties)
+    MappingDocumentController(properties)
+  }
+
+  def apply(properties: Properties): MappingDocumentController = {
+    val ckanUtility = new MpcCkanUtility(
+      properties.getProperty(MappingPediaConstant.CKAN_URL)
+      , properties.getProperty(MappingPediaConstant.CKAN_KEY)
+    );
+
+    val githubUtility = new MpcGithubUtility(
+      properties.getProperty(MappingPediaConstant.GITHUB_REPOSITORY)
+      , properties.getProperty(MappingPediaConstant.GITHUB_USER)
+      , properties.getProperty(MappingPediaConstant.GITHUB_ACCESS_TOKEN)
+    );
+
+    val virtuosoUtility = new MpcVirtuosoUtility(
+      properties.getProperty(MappingPediaConstant.VIRTUOSO_JDBC)
+      , properties.getProperty(MappingPediaConstant.VIRTUOSO_USER)
+      , properties.getProperty(MappingPediaConstant.VIRTUOSO_PWD)
+      , properties.getProperty(MappingPediaConstant.GRAPH_NAME)
+    );
+    val schemaOntology = MPCJenaUtility.loadSchemaOrgOntology(virtuosoUtility
+      , MappingPediaConstant.SCHEMA_ORG_FILE, MappingPediaConstant.FORMAT)
+    val jenaUtility = new MPCJenaUtility(schemaOntology);
+
+    new MappingDocumentController(ckanUtility, githubUtility, virtuosoUtility, jenaUtility);
 
   }
 
