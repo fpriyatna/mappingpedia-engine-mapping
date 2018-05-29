@@ -1,8 +1,8 @@
 package es.upm.fi.dia.oeg.mappingpedia.controller
 
-import java.io.File
+import java.io.{File, FileInputStream}
 import java.net.HttpURLConnection
-import java.util.Date
+import java.util.{Date, Properties}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mashape.unirest.http.{HttpResponse, JsonNode}
@@ -14,29 +14,47 @@ import es.upm.fi.dia.oeg.mappingpedia.utility._
 import org.springframework.web.multipart.MultipartFile
 
 import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.mappingpedia.utility.MappingpediaCommonsCKANUtility
+import es.upm.fi.dia.oeg.mappingpedia.utility.MpcCkanUtility
 
-class MappingDocumentController(
-                                 //val ckanClient:CKANUtility
-                                 //val githubClient:GitHubUtility
-                                 //val virtuosoClient: VirtuosoClient
-                                 val jenaClient:JenaClient
-                               ) {
-  val properties = new MappingPediaProperties();
+import scala.io.Source
 
-  val ckanUtility = new MappingpediaCommonsCKANUtility(
-    properties.ckanURL, properties.ckanKey
-  );
-
-  val githubUtility = new MappingpediaCommonsGitHubUtility(
-    properties.githubRepository, properties.githubUser, properties.githubAccessToken
-  );
-
-  val virtuosoUtility = new MappingpediaCommonsVirtuosoUtility(
-    properties.virtuosoJDBC, properties.virtuosoUser, properties.virtuosoPwd, ""
-  );
-
+class MappingDocumentController() {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
+  val properties = new Properties()
+
+  val propertiesFilePath = "/" + MappingPediaConstant.DEFAULT_CONFIGURATION_FILENAME;
+  val url = getClass.getResource(propertiesFilePath)
+  logger.info(s"loading mappingpedia-engine-mappings configuration file from: ${url}")
+  if (url != null) {
+    val source = Source.fromURL(url)
+    val reader = source.bufferedReader();
+
+    properties.load(reader)
+    println(s"properties.keySet = ${properties.keySet()}")
+  }
+
+  val ckanUtility = new MpcCkanUtility(
+    properties.getProperty(MappingPediaConstant.CKAN_URL)
+    , properties.getProperty(MappingPediaConstant.CKAN_KEY)
+  );
+
+  val githubUtility = new MpcGithubUtility(
+    properties.getProperty(MappingPediaConstant.GITHUB_REPOSITORY)
+    , properties.getProperty(MappingPediaConstant.GITHUB_USER)
+    , properties.getProperty(MappingPediaConstant.GITHUB_ACCESS_TOKEN)
+  );
+
+  val virtuosoUtility = new MpcVirtuosoUtility(
+    properties.getProperty(MappingPediaConstant.VIRTUOSO_JDBC)
+    , properties.getProperty(MappingPediaConstant.VIRTUOSO_USER)
+    , properties.getProperty(MappingPediaConstant.VIRTUOSO_PWD)
+    , properties.getProperty(MappingPediaConstant.GRAPH_NAME)
+  );
+
+  val jenaUtility = new MPCJenaUtility(null);
+
+
+
   val mapper = new ObjectMapper();
 
   def findOrCreate(id:String): MappingDocument = {
@@ -455,7 +473,7 @@ class MappingDocumentController(
   }
 
   def findByDatasetId(pDatasetId: String, pCKANPackageId:String
-                                      , pCKANPackageName:String) = {
+                      , pCKANPackageName:String) = {
 
     val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
 
@@ -531,11 +549,11 @@ class MappingDocumentController(
   def findByClassAndProperty(aClass: String, aProperty:String, subclass: Boolean): ListResult[MappingDocument] = {
     val classURI = MappingPediaUtility.getClassURI(aClass);
 
-    val normalizedClassURI = this.jenaClient.mapNormalizedTerms.getOrElse(classURI, classURI);
+    val normalizedClassURI = this.jenaUtility.mapNormalizedTerms.getOrElse(classURI, classURI);
 
     //val subclassesURIs:List[String] = jenaClient.getSubclassesSummary(normalizedClassURI).results.asInstanceOf[List[String]];
     val subclassesURIs:List[String] = if(subclass) {
-      jenaClient.getSubclassesSummary(normalizedClassURI).results.toList;
+      jenaUtility.getSubclassesSummary(normalizedClassURI).results.toList;
     } else {
       List(normalizedClassURI)
     }
