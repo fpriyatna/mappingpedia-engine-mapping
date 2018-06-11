@@ -26,8 +26,9 @@ import scala.io.Source.fromFile
 class MappingDocumentController(
                                  ckanUtility:MpcCkanUtility
                                  , githubUtility:MpcGithubUtility
-                               , virtuosoUtility:MpcVirtuosoUtility
-                               , jenaUtility:MPCJenaUtility ) {
+                                 , virtuosoUtility:MpcVirtuosoUtility
+                                 , jenaUtility:MPCJenaUtility
+                               ) {
   val logger: Logger = LoggerFactory.getLogger(this.getClass);
 
 
@@ -80,11 +81,11 @@ class MappingDocumentController(
 
   def addNewMappingDocument(
                              organizationId:String, datasetId: String, datasetPackageId:String
-                            //, manifestFileRef: MultipartFile
-                            , manifestFile: File
-                            , replaceMappingBaseURI: String
+                             //, manifestFileRef: MultipartFile
+                             , manifestFile: File
+                             , replaceMappingBaseURI: String
                              , generateManifestFile: Boolean
-                            , mappingDocument: MappingDocument
+                             , mappingDocument: MappingDocument
                            ): AddMappingDocumentResult = {
     var errorOccured = false;
     var collectiveErrorMessage: List[String] = Nil;
