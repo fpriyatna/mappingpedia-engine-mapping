@@ -7,7 +7,7 @@ prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dcterms: <http://purl.org/dc/elements/1.1/>
 
 SELECT DISTINCT *
-FROM <$graphURL>
+#FROM <$graphURL>
 WHERE {
     { ?md a mpv:R2RMLMappingDocument . }
     UNION
@@ -30,6 +30,5 @@ WHERE {
         ?distribution dcat:accessURL ?distributionAccessURL .
         ?distribution mpv:hash ?distributionHash .
     }
-
 }
 ORDER BY DESC(?dateSubmitted)
