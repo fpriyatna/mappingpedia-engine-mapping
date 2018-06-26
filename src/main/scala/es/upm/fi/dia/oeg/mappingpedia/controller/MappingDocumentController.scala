@@ -40,7 +40,9 @@ class MappingDocumentController(
   val mapper = new ObjectMapper();
 
   def findOrCreate(id:String): MappingDocument = {
-    val existingMappingDocument = if(id != null) {this.findById(id);} else { null }
+    val existingMappingDocument:MappingDocument = if(id != null) {
+      this.findById(id).results.iterator.next();
+    } else { null }
     val mappingDocument = if(existingMappingDocument == null) {
       new MappingDocument();
     } else { existingMappingDocument }
@@ -80,9 +82,11 @@ class MappingDocumentController(
 
 
   def addNewMappingDocument(
-                             organizationId:String, datasetId: String, datasetPackageId:String
+                             organizationId:String
+                             , datasetId: String
+                             , datasetPackageId:String
                              //, manifestFileRef: MultipartFile
-                             , manifestFile: File
+                             , pManifestFile: File
                              , replaceMappingBaseURI: String
                              , generateManifestFile: Boolean
                              , mappingDocument: MappingDocument
@@ -154,6 +158,18 @@ class MappingDocumentController(
       }
     }
     */
+
+    //MANIFEST FILE
+    val manifestFile = if(pManifestFile == null) {
+      if (generateManifestFile) {
+        //GENERATE MANIFEST FILE IF NOT PROVIDED
+        MappingDocumentController.generateManifestFile(mappingDocument, datasetId, datasetPackageId);
+      } else {
+        null
+      }
+    } else {
+      pManifestFile
+    }
 
     //STORING MAPPING AND MANIFEST FILES ON VIRTUOSO
     val virtuosoStoreMappingStatus = if(MappingPediaEngine.mappingpediaProperties.virtuosoEnabled) {
@@ -571,7 +587,7 @@ class MappingDocumentController(
     this.findByQueryString(queryString);
   }
 
-  def findById(mappingDocumentId: String): MappingDocument = {
+  def findById(mappingDocumentId: String): ListResult[MappingDocument] = {
     logger.info("findMappingDocumentsByMappingDocumentId:" + mappingDocumentId)
     val queryTemplateFile = "templates/findMappingDocumentsByMappingDocumentId.rq";
 
@@ -581,14 +597,18 @@ class MappingDocumentController(
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    logger.debug(s"queryString = ${queryString}")
+    logger.info(s"queryString = ${queryString}")
 
     val resultAux = this.findByQueryString(queryString).getResults();
+    /*
     val result = if(resultAux != null && resultAux.iterator.size > 0) {
       resultAux.iterator().next()
     } else {
       null
     }
+    */
+
+    val result = new ListResult[MappingDocument](resultAux.size, resultAux);
     result
   }
 

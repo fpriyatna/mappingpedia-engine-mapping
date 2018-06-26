@@ -8,7 +8,7 @@ prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dcterms: <http://purl.org/dc/elements/1.1/>
 
 SELECT DISTINCT ?mappedClass
-FROM <$graphURL>
+#FROM <$graphURL>
 WHERE {
     ?md mpv:hasTriplesMaps ?tm .
     ?md dcterms:identifier ?mdId .
