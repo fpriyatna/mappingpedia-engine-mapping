@@ -43,7 +43,7 @@ object MappingPediaEngine {
 	var ontologyModel:OntModel = null;
 	var mappingpediaProperties:MappingPediaProperties = new MappingPediaProperties();
 	var githubClient:GitHubUtility = null;
-	var ckanClient:CKANUtility = null;
+	var ckanClient:MpcCkanUtility = null;
 	var virtuosoClient:VirtuosoClient = null;
 	var jenaClient:JenaClient = null;
   val configurationFilename = "config.properties"
@@ -68,7 +68,7 @@ object MappingPediaEngine {
 
     this.ckanClient = if(mappingpediaProperties.ckanEnable) {
       try {
-        new CKANUtility(mappingpediaProperties.ckanURL, mappingpediaProperties.ckanKey);
+        new MpcCkanUtility(mappingpediaProperties.ckanURL, mappingpediaProperties.ckanKey);
       } catch {
         case e: Exception =>
           e.printStackTrace()

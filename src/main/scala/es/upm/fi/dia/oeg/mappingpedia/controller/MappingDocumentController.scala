@@ -1094,7 +1094,7 @@ object MappingDocumentController {
       }
     }
 
-    logger.info("newTriples = " + newTriples);
+    logger.debug("newTriples = " + newTriples);
     newTriples;
   }
 
