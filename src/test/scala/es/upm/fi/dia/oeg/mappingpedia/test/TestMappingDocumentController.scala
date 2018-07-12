@@ -14,14 +14,16 @@ object TestMappingDocumentController {
   }
 
   def testAddMappingDocument(controller: MappingDocumentController) = {
-    val organizationId = "test-mobileage-upm";
-    val datasetId = "86c720d0-74b7-4273-ac2e-accf33a1b7db";
-    val datasetPackageId = "3c6490fd-4a3d-4932-9335-7ff2d9ae2796";
+    val organizationId = "test-mobileage-upm3";
+    val datasetId = "becbc9ff-e2ac-47b8-8781-260d53067119";
+    val datasetPackageId = "ae2025a5-86bf-4be2-a850-00e40dd88811";
+    val mdDownloadUrl = "https://raw.githubusercontent.com/oeg-upm/mappingpedia-engine/master/examples/edificio-historico.r2rml.ttl";
+
     val manifestFile:File = null;
     val replaceMappingBaseURI:String = null
     val generateManifestFile:Boolean = true
     val mappingDocument = new MappingDocument()
-    mappingDocument.setDownloadURL("https://raw.githubusercontent.com/oeg-upm/mappingpedia-contents/master/zaragoza_spain/zaragoza-cementerios/zaragoza-cementerios.rml.ttl")
+    mappingDocument.setDownloadURL(mdDownloadUrl)
 
     controller.addNewMappingDocument(
       organizationId
