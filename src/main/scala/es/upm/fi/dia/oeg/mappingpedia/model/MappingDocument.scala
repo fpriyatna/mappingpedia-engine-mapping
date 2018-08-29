@@ -42,7 +42,7 @@ class MappingDocument(val dctIdentifier:String) {
   var distributionDownloadURL:String = null;
   var distributionSHA:String = null;
   */
-  //var dataset:Dataset = null;
+  var datasetId:String = null;
 
   var manifestAccessURL:String = null;
   var manifestDownloadURL:String = null;
@@ -124,4 +124,6 @@ class MappingDocument(val dctIdentifier:String) {
   }
 
   def getIsOutdated = this.isOutdated;
+
+  def getDataset_id = this.datasetId
 }

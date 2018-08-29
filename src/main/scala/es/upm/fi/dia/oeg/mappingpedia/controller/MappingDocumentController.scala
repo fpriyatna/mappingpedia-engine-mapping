@@ -444,6 +444,7 @@ class MappingDocumentController(
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
       mapValues, "templates/findAllMappingDocuments.rq")
+    logger.info(s"queryString = ${queryString}")
 
     this.findByQueryString(queryString);
 
@@ -672,7 +673,8 @@ class MappingDocumentController(
         val md = new MappingDocument(mdID);
         md.dctTitle = MappingPediaUtility.getStringOrElse(qs, "title", null);
 
-        val datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
+        md.datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
+        logger.info(s"md.datasetId = ${md.datasetId}")
         val datasetModified = MappingPediaUtility.getStringOrElse(qs, "datasetModified", null);
         val datasetTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
 
