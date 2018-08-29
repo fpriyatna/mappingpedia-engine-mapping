@@ -446,8 +446,11 @@ class MappingDocumentController(
       mapValues, "templates/findAllMappingDocuments.rq")
     logger.info(s"queryString = ${queryString}")
 
-    this.findByQueryString(queryString);
+    val listResult = this.findByQueryString(queryString);
+    logger.info(s"listResult.count = ${listResult.count}")
 
+
+    listResult
   }
 
   def findByTerm(searchType: String, searchTerm: String): ListResult[MappingDocument] = {
@@ -692,13 +695,13 @@ class MappingDocumentController(
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
 
         md.hash = MappingPediaUtility.getStringOrElse(qs, "mdHash", null);
+        logger.info(s"md.hash = ${md.hash}");
 
         md.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "packageId", null);
 
         md.ckanResourceId = MappingPediaUtility.getStringOrElse(qs, "resourceId", null);
 
         md.setDownloadURL(MappingPediaUtility.getStringOrElse(qs, "mdDownloadURL", null));
-        //logger.info(s"md.sha = ${md.sha}");
 
         md.isOutdated = MappingDocumentController.isOutdatedMappingDocument(md.dctDateSubmitted, datasetModified);
 
@@ -709,7 +712,7 @@ class MappingDocumentController(
 
           retrievedMappings = retrievedMappings :+ md.hash
         } else {
-          //logger.warn(s"mapping document with sha ${md.sha} has been retrived.")
+          logger.warn(s"mapping document with hash ${md.hash} has been retrived.")
         }
 
       }

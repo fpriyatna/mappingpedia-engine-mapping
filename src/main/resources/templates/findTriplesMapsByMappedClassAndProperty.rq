@@ -37,7 +37,7 @@ WHERE {
         ?pomClass rr:objectMap ?omClass . ?omClass rr:constant ?searchedClass .
         FILTER regex(str(?searchedClass), "$mappedClass", "i")
     }
-    #OPTIONAL { ?md mpv:sha ?mdSHA . }
+    #OPTIONAL { ?md mpv:sha ?mdHash . }
     ?md mpv:hash ?mdHash .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
