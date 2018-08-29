@@ -20,6 +20,6 @@ public class Inbox {
 
     @Expose("schema:location")
     public String getInbox() {
-        return "http://mappingpedia.linkeddata.es/engine/inbox/";
+        return "http://mappingpedia.linkeddata.es/engine/mappings/inbox/";
     }
 }
