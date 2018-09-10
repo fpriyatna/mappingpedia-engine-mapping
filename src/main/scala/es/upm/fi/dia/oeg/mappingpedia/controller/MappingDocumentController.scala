@@ -435,7 +435,12 @@ class MappingDocumentController(
   }
 
 
-  def findAll() = {
+
+  def findAll() : ListResult[MappingDocument] = {
+    this.findAll(false);
+  }
+
+  def findAll(withDuplicates:Boolean) : ListResult[MappingDocument] = {
 
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
@@ -446,7 +451,7 @@ class MappingDocumentController(
       mapValues, "templates/findAllMappingDocuments.rq")
     logger.info(s"queryString = ${queryString}")
 
-    val listResult = this.findByQueryString(queryString);
+    val listResult = this.findByQueryString(queryString, withDuplicates);
     logger.info(s"listResult.count = ${listResult.count}")
 
 
@@ -653,6 +658,10 @@ class MappingDocumentController(
   }
 
   def findByQueryString(queryString: String): ListResult[MappingDocument] = {
+    this.findByQueryString(queryString, false);
+  }
+
+  def findByQueryString(queryString: String , withDuplicates:Boolean): ListResult[MappingDocument] = {
     //logger.info(s"queryString = $queryString");
     /*
     val m = VirtModel.openDatabaseModel(MappingPediaEngine.mappingpediaProperties.graphName, MappingPediaEngine.mappingpediaProperties.virtuosoJDBC
@@ -677,7 +686,7 @@ class MappingDocumentController(
         md.dctTitle = MappingPediaUtility.getStringOrElse(qs, "title", null);
 
         md.datasetId = MappingPediaUtility.getStringOrElse(qs, "datasetId", null);
-        logger.info(s"md.datasetId = ${md.datasetId}")
+        //logger.info(s"md.datasetId = ${md.datasetId}")
         val datasetModified = MappingPediaUtility.getStringOrElse(qs, "datasetModified", null);
         val datasetTitle = MappingPediaUtility.getStringOrElse(qs, "datasetTitle", null);
 
@@ -695,7 +704,7 @@ class MappingDocumentController(
         md.dctDateSubmitted = MappingPediaUtility.getStringOrElse(qs, "dateSubmitted", null);
 
         md.hash = MappingPediaUtility.getStringOrElse(qs, "mdHash", null);
-        logger.info(s"md.hash = ${md.hash}");
+        //logger.info(s"md.hash = ${md.hash}");
 
         md.ckanPackageId = MappingPediaUtility.getStringOrElse(qs, "packageId", null);
 
@@ -707,16 +716,19 @@ class MappingDocumentController(
 
         md.mappedClass = MappingPediaUtility.getStringOrElse(qs, "mappedClass", null);
 
-        if(!retrievedMappings.contains(md.hash)) {
-          //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
-          //results = md :: results;
+        if(withDuplicates) {
           results = results :+ md
-
           retrievedMappings = retrievedMappings :+ md.hash
         } else {
-          logger.warn(s"mapping document with hash ${md.hash} has been retrived.")
+          if(!retrievedMappings.contains(md.hash)) {
+            //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
+            //results = md :: results;
+            results = results :+ md
+            retrievedMappings = retrievedMappings :+ md.hash
+          } else {
+            logger.warn(s"mapping document with hash ${md.hash} has been retrived.")
+          }
         }
-
       }
     } finally qexec.close
 
