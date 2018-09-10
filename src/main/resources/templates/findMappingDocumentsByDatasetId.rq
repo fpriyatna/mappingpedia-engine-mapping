@@ -15,27 +15,39 @@ WHERE {
     { ?md a mpv:MappingDocument . }
 
     ?md dcterms:identifier ?mdID .
-    ?md dcterms:dateSubmitted ?mdDateSubmitted .
-    OPTIONAL { ?md mpv:hash ?mdHash . }
+    ?md mpv:hash ?mdHash .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
-    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
+    OPTIONAL {
+        ?md mpv:hasTriplesMaps ?tm .
+        { ?tm rr:logicalTable ?lt. }
+        UNION
+        { ?tm rml:logicalSource ?lt. }
+
+        ?lt rr:tableName ?tn.
+        {
+            ?tm rr:subjectMap ?sm .
+            ?sm rr:class ?mappedClass .
+        }
+        UNION
+        {
+            ?tm rr:predicateObjectMap ?pom .
+            ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
+            ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
+        }
+    }
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
     OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }
     OPTIONAL { ?md mpv:hasMappingLanguage ?mappingLanguage . }
     OPTIONAL {
-        ?md mpv:hasDatasetId ?datasetId .
+        ?md mpv:hasDataset ?dataset .
+        ?dataset dcterms:identifier ?datasetId .
+        OPTIONAL { ?dataset dcterms:title ?datasetTitle. }
         OPTIONAL {
-            ?md mpv:hasDataset ?dataset .
-            ?dataset dcterms:title ?datasetTitle.
-            ?dataset dcterms:modified ?datasetModified .
-            # ?dataset dcterms:identifier ?datasetId .
-            OPTIONAL {
-                ?dataset dcat:distribution ?distribution .
-                ?distribution dcat:accessURL ?distributionAccessURL .
-                ?distribution mpv:hash ?distributionHash .
-            }
+            ?dataset dcat:distribution ?distribution .
+            ?distribution dcat:accessURL ?distributionAccessURL .
+            ?distribution mpv:hash ?distributionHash .
         }
     }
     FILTER regex(str(?datasetId), "$datasetId", "i")

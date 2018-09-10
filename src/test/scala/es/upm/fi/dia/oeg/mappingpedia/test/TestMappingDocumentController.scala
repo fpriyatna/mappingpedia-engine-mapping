@@ -6,14 +6,16 @@ import es.upm.fi.dia.oeg.mappingpedia.controller.MappingDocumentController
 import es.upm.fi.dia.oeg.mappingpedia.model.MappingDocument
 
 object TestMappingDocumentController {
-  def main(args:Array[String]) = {
-    val controller = MappingDocumentController();
-    this.testAddMappingDocument(controller);
+  val controller = MappingDocumentController();
 
+  def main(args:Array[String]) = {
+    //this.testAddMappingDocument();
+    //this.controller.findAll(true);
+    this.controller.findByDatasetId("4f9085c2-8f87-4a05-a375-4e3fc1bd0b0a", true);
     println("bye");
   }
 
-  def testAddMappingDocument(controller: MappingDocumentController) = {
+  def testAddMappingDocument() = {
     val organizationId = "test-mobileage-upm3";
     val datasetId = "becbc9ff-e2ac-47b8-8781-260d53067119";
     val datasetPackageId = "ae2025a5-86bf-4be2-a850-00e40dd88811";
@@ -25,7 +27,7 @@ object TestMappingDocumentController {
     val mappingDocument = new MappingDocument()
     mappingDocument.setDownloadURL(mdDownloadUrl)
 
-    controller.addNewMappingDocument(
+    this.controller.addNewMappingDocument(
       organizationId
       , datasetId
       , datasetPackageId
@@ -35,5 +37,6 @@ object TestMappingDocumentController {
       , mappingDocument: MappingDocument
     )
   }
+
 
 }
