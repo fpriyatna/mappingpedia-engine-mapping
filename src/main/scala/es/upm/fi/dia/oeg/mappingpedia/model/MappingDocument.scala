@@ -34,6 +34,7 @@ class MappingDocument(val dctIdentifier:String) {
   var mappingDocumentFile:File = null;
   var hash:String = null;
   var isOutdated:Boolean = false;
+  var mappedClass:String = null;
 
   // TODO it is a hack by Freddy, refactor this
   /*
@@ -126,4 +127,6 @@ class MappingDocument(val dctIdentifier:String) {
   def getIsOutdated = this.isOutdated;
 
   def getDataset_id = this.datasetId
+
+  def getMapped_class = this.mappedClass;
 }
