@@ -445,6 +445,7 @@ class MappingDocumentController(
     //val queryString: String = MappingPediaUtility.readFromResourcesDirectory("templates/findAllMappingDocuments.rq")
     val mapValues: Map[String, String] = Map(
       "$graphURL" -> MappingPediaEngine.mappingpediaProperties.graphName
+      , "$datasetId" -> ""
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(
@@ -485,10 +486,25 @@ class MappingDocumentController(
     result;
   }
 
-  def findByDatasetId(pDatasetId: String, pCKANPackageId:String
-                      , pCKANPackageName:String) = {
 
-    val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
+  def findByDatasetId(pDatasetId: String) : ListResult[MappingDocument]= {
+    this.findByDatasetId(pDatasetId, null, null, false)
+  }
+
+  def findByDatasetId(pDatasetId: String, withDuplicates:Boolean) : ListResult[MappingDocument]= {
+    this.findByDatasetId(pDatasetId, null, null, withDuplicates)
+  }
+
+  def findByDatasetId(pDatasetId: String, pCKANPackageId:String
+                      , pCKANPackageName:String): ListResult[MappingDocument] = {
+    this.findByDatasetId(pDatasetId, pCKANPackageId, pCKANPackageName, false);
+  }
+
+  def findByDatasetId(pDatasetId: String, pCKANPackageId:String
+                      , pCKANPackageName:String, withDuplicates:Boolean): ListResult[MappingDocument] = {
+
+    //val queryTemplateFile = "templates/findMappingDocumentsByDatasetId.rq";
+    val queryTemplateFile = "templates/findAllMappingDocuments.rq";
 
     val datasetId = if(pDatasetId != null) {
       pDatasetId
@@ -510,8 +526,12 @@ class MappingDocumentController(
     );
 
     val queryString: String = MappingPediaEngine.generateStringFromTemplateFile(mapValues, queryTemplateFile)
-    logger.debug(s"queryString = ${queryString}")
-    this.findByQueryString(queryString);
+    logger.info(s"queryString = ${queryString}")
+
+    val listResult:ListResult[MappingDocument]= this.findByQueryString(queryString, withDuplicates);
+    logger.info(s"listResult.count = ${listResult.count}")
+
+    listResult
   }
 
   def findByCKANPackageId(pCKANPackageId:String) = {

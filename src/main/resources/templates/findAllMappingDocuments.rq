@@ -35,7 +35,6 @@ WHERE {
             ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
             ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
         }
-
     }
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
     OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
@@ -51,5 +50,6 @@ WHERE {
             ?distribution mpv:hash ?distributionHash .
         }
     }
+    FILTER regex(str(?datasetId), "$datasetId", "i")
 }
 ORDER BY DESC(?dateSubmitted)
