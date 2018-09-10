@@ -2,6 +2,7 @@
 
 prefix mpv: <http://mappingpedia.linkeddata.es/vocabulary#>
 prefix rr: <http://www.w3.org/ns/r2rml#>
+prefix rml: <http://semweb.mmlab.be/ns/rml#>
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dcterms: <http://purl.org/dc/elements/1.1/>
@@ -17,7 +18,25 @@ WHERE {
     ?md mpv:hash ?mdHash .
     OPTIONAL { ?md mpv:mappingDocumentTitle ?title . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mappingDocumentFile . }
-    OPTIONAL { ?md mpv:hasTriplesMaps ?tm . }
+    OPTIONAL {
+        ?md mpv:hasTriplesMaps ?tm .
+        { ?tm rr:logicalTable ?lt. }
+        UNION
+        { ?tm rml:logicalSource ?lt. }
+
+        ?lt rr:tableName ?tn.
+        {
+            ?tm rr:subjectMap ?sm .
+            ?sm rr:class ?mappedClass .
+        }
+        UNION
+        {
+            ?tm rr:predicateObjectMap ?pom .
+            ?pom rr:predicateMap ?pm . ?pm rr:constant rdf:type .
+            ?pom rr:objectMap ?om . ?om rr:constant ?mappedClass .
+        }
+
+    }
     OPTIONAL { ?md mpv:mappingDocumentCreator ?creator . }
     OPTIONAL { ?md mpv:mappingDocumentDateSubmitted ?dateSubmitted . }
     OPTIONAL { ?md mpv:hasMappingDocumentFile ?mdDownloadURL . }

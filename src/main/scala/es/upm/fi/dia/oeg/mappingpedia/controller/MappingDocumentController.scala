@@ -705,6 +705,8 @@ class MappingDocumentController(
 
         md.isOutdated = MappingDocumentController.isOutdatedMappingDocument(md.dctDateSubmitted, datasetModified);
 
+        md.mappedClass = MappingPediaUtility.getStringOrElse(qs, "mappedClass", null);
+
         if(!retrievedMappings.contains(md.hash)) {
           //logger.warn(s"retrieving mapping document with sha ${md.sha}.")
           //results = md :: results;
